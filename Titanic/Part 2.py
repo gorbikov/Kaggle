@@ -13,8 +13,8 @@ random_ceed = 777
 train_df_path = pathlib.Path("intermediate data/results/Part 1.py_train_df.csv")
 test_df_path = pathlib.Path("intermediate data/results/Part 1.py_test_df.csv")
 
-train_df = pd.read_csv(train_df_path)
-test_df = pd.read_csv(test_df_path)
+train_df = pd.read_csv(train_df_path, index_col="PassengerId")
+test_df = pd.read_csv(test_df_path, index_col="PassengerId")
 
 # Нормализуем данные.
 columns_to_normalize = ["Age", "SibSp", "Parch", "Fare"]
