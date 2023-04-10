@@ -1,0 +1,14 @@
+name: DataScience
+channels:
+  - defaults
+dependencies:
+  - seaborn
+  - scikit-learn
+  - missingno
+  - numpy
+  - jupyter
+  - pytorch
+  - pandas
+  - matplotlib
+  - joblib
+prefix: C:\Users\denis\miniconda3\envs\DataScience
