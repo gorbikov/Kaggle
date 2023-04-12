@@ -73,6 +73,7 @@ show_nans(test_df, "test_df")
 
 # Просмотр линейных зависимостей.
 generate_correlation_with_target(current_script_name, train_df, "train_df", "Survived")
+generate_correlation_heatmap(current_script_name, train_df, "train_df")
 
 save_results(current_script_name, train_df, "train_df")
 save_results(current_script_name, test_df, "test_df")

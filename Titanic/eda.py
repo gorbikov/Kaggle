@@ -32,6 +32,7 @@ def save_results(current_script_name: str, df: pd.DataFrame, filename: str):
     df.to_csv(filepath)
     print(filename + " сохранен в " + str(filepath))
 
+
 def save_to_tmp(current_script_name: str, df: pd.DataFrame, filename: str):
     """Сохраняет датафрейм в виде csv в папку intermediate data/tmp/."""
     show_separator("Сохраняем датафрейм " + filename + " в csv")
@@ -39,7 +40,6 @@ def save_to_tmp(current_script_name: str, df: pd.DataFrame, filename: str):
     filepath.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(filepath)
     print(filename + " сохранен в " + str(filepath))
-
 
 
 def inspect_data(current_script_name: str, df: pd.DataFrame, filename: str):
@@ -262,6 +262,51 @@ def generate_correlation_with_target(current_script_name: str, df: pd.DataFrame,
 
     # Сохраняет график в файл.
     filepath = Path(str("intermediate data/diagrams/" + current_script_name + "_" + df_name + '_correlation.png'))
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(filepath)
+    print("Сохранено в intermediate data/diagrams/")
+
+    # Убирает фигуру из памяти и закрывает график.
+    fig.clear()
+    plt.close()
+
+
+def generate_correlation_heatmap(current_script_name: str, df: pd.DataFrame, df_name: str):
+    """Сохраняет тепловую матрицу корреляций для датафрейма в папку intermediate data/diagrams/."""
+
+    # Выводит разделитель с описанием того, что делает функция.
+    show_separator("Тепловая карта корреляций для " + df_name)
+
+    # Формирует данные для составления графика.
+    corr_df = df.corr()
+    print(corr_df)
+    plt_labels = corr_df.columns
+
+    # Создаёт фигуру, оси и решетку.
+    fig: matplotlib.figure.Figure = plt.figure()
+    ax: matplotlib.axes.Axes = plt.axes()
+    fig.set_size_inches(w=19.2, h=10.8)
+
+    # Рисует график.
+    ax.set_title("Тепловая карта корреляций для " + df_name)
+    ax.set_xticks(np.arange(len(corr_df.columns)))
+    ax.set_yticks(np.arange(len(corr_df.columns)))
+    ax.set_xticklabels(plt_labels, rotation=65)
+    ax.set_yticklabels(plt_labels, rotation=0)
+    im = ax.imshow(corr_df)
+    fig.colorbar(im, orientation='vertical', fraction=0.05)
+
+    # Добавляет подписи данных.
+    for i in range(len(corr_df.columns)):
+        for j in range(len(corr_df.columns)):
+            ax.text(i, j, round(corr_df.iloc[j, i], 2), ha="center", va="center", color="w")
+
+
+    # Регулирует отступы на графике.
+    plt.tight_layout()
+
+    # Сохраняет график в файл.
+    filepath = Path(str("intermediate data/diagrams/" + current_script_name + "_" + df_name + '_heatmap.png'))
     filepath.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(filepath)
     print("Сохранено в intermediate data/diagrams/")
