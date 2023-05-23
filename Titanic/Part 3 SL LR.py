@@ -3,10 +3,7 @@ from os import path
 
 import torch
 import torch.nn
-from joblib import dump
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
-from sklearn.preprocessing import StandardScaler
+
 from eda import *
 
 # Вводные для удобства.
@@ -28,53 +25,13 @@ train_target_tensor: torch.Tensor = torch.Tensor(train_norm_df[["Survived"]].val
 
 
 # Собирает модель логистической регрессии.
-class LogisticRegression(torch.nn.Module):
-    def __init__(self, n_input_features):
-        super(LogisticRegression, self).__init__()
-        self.linear = torch.nn.Linear(n_input_features, 1)
-
-    # sigmoid transformation of the input
-    def forward(self, x):
-        y_prediction = torch.sigmoid(self.linear(x))
-        return y_prediction
-
-
-lr = LogisticRegression(train_norm_tensor.size()[1])
-
 # Задаёт параметры обучения.
 num_epochs = 100000
 learning_rate = 0.001
 # Использует Binary Cross Entropy.
-criterion = torch.nn.BCELoss()
 # Использует ADAM optimizer.
-optimizer = torch.optim.SGD(lr.parameters(), lr=learning_rate)
-
 # Загружает модель из файла.
-if path.exists(results_folder_path.joinpath(current_script_name + '_model_weights')):
-    lr.load_state_dict(torch.load(results_folder_path.joinpath(current_script_name + '_model_weights')))
-    show_separator("Параметры модели загружены из файла.")
-else:
-    show_separator("Файл с параметрами подели отсутствует. Обучение начинается с нуля.")
-
 # Начинает обучение.
-show_separator("Обучение модели на " + str(num_epochs) + " эпохах:")
-loss_function_values_for_graph = dict()
-previous_loss_function_value = None
-for epoch in range(num_epochs):
-    y_pred = lr(train_norm_tensor)
-    loss = criterion(y_pred, train_target_tensor)
-    loss.backward()
-    optimizer.step()
-    optimizer.zero_grad()
-    if (epoch + 1) % 100 == 0:
-        # Выводит loss function каждый 20 эпох.
-        loss_function_values_for_graph[epoch + 1] = loss.item()
-        print(f'epoch: {epoch + 1}, loss = {loss.item():.4f}')
-    if (previous_loss_function_value is not None) and (float(loss.item()) > previous_loss_function_value):
-        show_separator("!!!Обучение остановлено, т.к. зафиксирован рост lost function.!!!")
-        break
-    previous_loss_function_value = float(loss.item())
-
 # Сохраняет в файл график loss function.
 generate_loss_function_graph(current_script_name, loss_function_values_for_graph)
 
