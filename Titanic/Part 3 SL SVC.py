@@ -1,7 +1,7 @@
 import pathlib
 
 from sklearn import svm
-from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV
 
 from eda import *
 
@@ -17,16 +17,30 @@ test_norm_df_path = pathlib.Path("intermediate data/results/Part 2.py_test_norm_
 train_norm_df = pd.read_csv(train_norm_df_path, index_col="PassengerId")
 test_norm_df = pd.read_csv(test_norm_df_path, index_col="PassengerId")
 
-# Собирает модель логистической регрессии.
-clf: LogisticRegression = svm.SVC().fit(train_norm_df.drop(['Survived'], axis=1),
-                                        train_norm_df[['Survived']].values.ravel())
+# Собирает модель метода базисных векторов.
+clf: svm.SVC = svm.SVC()
 
-# Делаем прогноз.
-target_predicted_df = pd.DataFrame(clf.predict(test_norm_df), columns=['Survived'])
+# Подбирает лучшие параметры модели.
+param_grid = {'C': [0.01, 0.1, 1, 10, 100, 1000],
+              'gamma': [0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5]}
+clf_gscv = GridSearchCV(clf, param_grid, cv=10)
+clf_gscv.fit(train_norm_df.drop(['Survived'], axis=1),
+             train_norm_df[['Survived']].values.ravel())
+
+show_separator("Лучшие параметры модели.")
+print(clf_gscv.best_params_)
+
+# Загружает лучшие параметры и тренирует модель.
+clf: svm.SVC = svm.SVC(C=clf_gscv.best_params_['C'], gamma=clf_gscv.best_params_['gamma'])
+clf.fit(train_norm_df.drop(['Survived'], axis=1), train_norm_df[['Survived']].values.ravel())
 
 # Оценка на тренировочных данных.
 show_separator("Оценка на тренировочных данных.")
 print(clf.score(train_norm_df.drop(['Survived'], axis=1), train_norm_df[['Survived']].values.ravel()))
+
+# Делаем прогноз.
+target_predicted_df = pd.DataFrame(clf.predict(test_norm_df), columns=['Survived'])
+
 
 # Приводим прогноз в соответствие с условиями задачи.
 target_predicted_df["PassengerId"] = test_norm_df.index

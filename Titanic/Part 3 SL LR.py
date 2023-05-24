@@ -1,8 +1,7 @@
 import pathlib
-from os import path
 
-import torch
-import torch.nn
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV
 
 from eda import *
 
@@ -18,30 +17,30 @@ test_norm_df_path = pathlib.Path("intermediate data/results/Part 2.py_test_norm_
 train_norm_df = pd.read_csv(train_norm_df_path, index_col="PassengerId")
 test_norm_df = pd.read_csv(test_norm_df_path, index_col="PassengerId")
 
-# Создаёт тензоры из датафреймов.
-test_norm_tensor: torch.Tensor = torch.Tensor(test_norm_df.values)
-train_norm_tensor: torch.Tensor = torch.Tensor(train_norm_df.drop(["Survived"], axis=1).values)
-train_target_tensor: torch.Tensor = torch.Tensor(train_norm_df[["Survived"]].values)
+# Собирает модель метода базисных векторов.
+clf: LogisticRegression = LogisticRegression()
 
+# Подбирает лучшие параметры модели.
+param_grid = {'C': np.arange(0.1, 10, 0.1)}
+clf_gscv = GridSearchCV(clf, param_grid, cv=10)
+clf_gscv.fit(train_norm_df.drop(['Survived'], axis=1),
+             train_norm_df[['Survived']].values.ravel())
 
-# Собирает модель логистической регрессии.
-# Задаёт параметры обучения.
-num_epochs = 100000
-learning_rate = 0.001
-# Использует Binary Cross Entropy.
-# Использует ADAM optimizer.
-# Загружает модель из файла.
-# Начинает обучение.
-# Сохраняет в файл график loss function.
-generate_loss_function_graph(current_script_name, loss_function_values_for_graph)
+show_separator("Лучшие параметры модели.")
+print(clf_gscv.best_params_)
 
-# Сохраняет параметры модели в файл.
-torch.save(lr.state_dict(), results_folder_path.joinpath(current_script_name + '_model_weights'))
-show_separator("Параметры модели сохранены в папке results.")
+# Загружает лучшие параметры и тренирует модель.
+clf: LogisticRegression = LogisticRegression(C=clf_gscv.best_params_['C'])
+clf.fit(train_norm_df.drop(['Survived'], axis=1), train_norm_df[['Survived']].values.ravel())
 
-target_predicted: torch.Tensor = lr(test_norm_tensor).round()
+# Оценка на тренировочных данных.
+show_separator("Оценка на тренировочных данных.")
+print(clf.score(train_norm_df.drop(['Survived'], axis=1), train_norm_df[['Survived']].values.ravel()))
 
-target_predicted_df = pd.DataFrame(target_predicted.detach().numpy()).rename(columns={0: "Survived"})
+# Делаем прогноз.
+target_predicted_df = pd.DataFrame(clf.predict(test_norm_df), columns=['Survived'])
+
+# Приводим прогноз в соответствие с условиями задачи.
 target_predicted_df["PassengerId"] = test_norm_df.index
 target_predicted_df = target_predicted_df.set_index('PassengerId')
 target_predicted_df["Survived"] = target_predicted_df["Survived"].astype(int)
