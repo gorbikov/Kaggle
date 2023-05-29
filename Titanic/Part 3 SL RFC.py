@@ -1,6 +1,7 @@
 import pathlib
 
 from sklearn import svm
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 
 from eda import *
@@ -18,12 +19,16 @@ train_norm_df = pd.read_csv(train_norm_df_path, index_col="PassengerId")
 test_norm_df = pd.read_csv(test_norm_df_path, index_col="PassengerId")
 
 # Собирает модель метода базисных векторов.
-clf: svm.SVC = svm.SVC()
+clf: RandomForestClassifier = RandomForestClassifier()
+show_separator('Параметры классификатора.')
+print(clf.get_params())
 
 # Подбирает лучшие параметры модели.
-param_grid = {'C': [0.01, 0.1, 1, 10, 100, 1000],
-              'gamma': [0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5]}
-clf_gscv = GridSearchCV(clf, param_grid, cv=10)
+param_grid = {'n_estimators': [275],
+              'max_depth': [10],
+              'max_features': [11],
+              'criterion': ['log_loss']}
+clf_gscv = GridSearchCV(clf, param_grid, cv=4, verbose=4)
 clf_gscv.fit(train_norm_df.drop(['Survived'], axis=1),
              train_norm_df[['Survived']].values.ravel())
 
@@ -31,7 +36,10 @@ show_separator("Лучшие параметры модели.")
 print(clf_gscv.best_params_)
 
 # Загружает лучшие параметры и тренирует модель.
-clf: svm.SVC = svm.SVC(C=clf_gscv.best_params_['C'], gamma=clf_gscv.best_params_['gamma'])
+clf: RandomForestClassifier = RandomForestClassifier(n_estimators=clf_gscv.best_params_['n_estimators'],
+                                                     max_depth=clf_gscv.best_params_['max_depth'],
+                                                     max_features=clf_gscv.best_params_['max_features'],
+                                                     criterion=clf_gscv.best_params_['criterion'])
 clf.fit(train_norm_df.drop(['Survived'], axis=1), train_norm_df[['Survived']].values.ravel())
 
 # Оценка на тренировочных данных.
